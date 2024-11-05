@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         type: 'loop',
         autoWidth: true,
-        gap: '2rem',
-        drag: 'false',
+        gap: '1rem',
+        drag: 'free',
         focus: 'left',
         arrows: false,
         pagination: false,
