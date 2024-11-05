@@ -5,15 +5,6 @@ function initSplide(selector: string, options: any, useAutoScroll = false) {
 
   const splide = new Splide(splideElement, options);
 
-  // Enable clicking on slides to navigate
-  splide.on('mounted', () => {
-    splide.Components.Elements.slides.forEach((slide: HTMLElement, index: number) => {
-      slide.addEventListener('click', () => {
-        splide.go(index);
-      });
-    });
-  });
-
   // Mount Splide with Autoscroll extension only if needed
   if (useAutoScroll && window.splide?.Extensions) {
     splide.mount(window.splide.Extensions);
@@ -30,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         type: 'loop',
         autoWidth: true,
-        gap: '3rem',
+        gap: '2rem',
         drag: 'false',
         focus: 'left',
         arrows: false,
