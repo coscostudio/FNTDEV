@@ -21,15 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         type: 'loop',
         autoWidth: true,
-        gap: '.5rem',
-        drag: 'true',
+        gap: '1rem',
+        drag: 'free',
         focus: 'left',
         arrows: false,
         pagination: false,
         keyboard: false,
         autoScroll: {
           autoStart: true,
-          speed: 0.6,
+          speed: 0.5,
           pauseOnHover: false,
         },
       },
