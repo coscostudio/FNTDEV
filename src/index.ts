@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         type: 'loop',
         autoWidth: true,
-        gap: '1rem',
+        gap: '4rem',
         drag: 'free',
         focus: 'left',
         arrows: false,
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keyboard: false,
         autoScroll: {
           autoStart: true,
-          speed: 0.5,
+          speed: 0.75,
           pauseOnHover: false,
         },
       },
