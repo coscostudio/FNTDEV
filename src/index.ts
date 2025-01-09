@@ -1,25 +1,33 @@
-///splide >>>
 function initSplide(selector: string, options: any, useAutoScroll = false) {
-  const splideElement = document.querySelector(selector);
-  if (!splideElement) return;
+  // Query all matching elements instead of just one
+  const splideElements = document.querySelectorAll(selector);
+  if (!splideElements.length) return;
 
-  const splide = new Splide(splideElement, options);
+  // Initialize each instance
+  splideElements.forEach((element, index) => {
+    const uniqueId = `${selector.replace('.', '')}-${index}`;
+    element.setAttribute('id', uniqueId);
 
-  // Enable clicking on slides to navigate
-  splide.on('mounted', () => {
-    splide.Components.Elements.slides.forEach((slide: HTMLElement, index: number) => {
-      slide.addEventListener('click', () => {
-        splide.go(index);
+    const splide = new Splide(element, {
+      ...options,
+    });
+
+    // Enable clicking on slides to navigate
+    splide.on('mounted', () => {
+      splide.Components.Elements.slides.forEach((slide: HTMLElement, slideIndex: number) => {
+        slide.addEventListener('click', () => {
+          splide.go(slideIndex);
+        });
       });
     });
-  });
 
-  // Mount Splide with Autoscroll extension only if needed
-  if (useAutoScroll && window.splide?.Extensions) {
-    splide.mount(window.splide.Extensions);
-  } else {
-    splide.mount();
-  }
+    // Mount Splide with Autoscroll extension only if needed
+    if (useAutoScroll && window.splide?.Extensions) {
+      splide.mount(window.splide.Extensions);
+    } else {
+      splide.mount();
+    }
+  });
 }
 
 // Sliders Initialization
