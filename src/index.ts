@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keyboard: false,
         autoScroll: {
           autoStart: true,
-          speed: 0.75,
+          speed: 0.5,
           pauseOnHover: false,
         },
       },
@@ -57,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         autoWidth: true,
         perMove: 1,
-        gap: '2rem',
-        arrows: false,
+        gap: '1rem',
+        arrows: true,
         pagination: false,
         drag: true,
         type: 'slide',
