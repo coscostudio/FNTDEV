@@ -53,6 +53,25 @@ document.addEventListener('DOMContentLoaded', () => {
       useAutoScroll: true,
     },
     {
+      selector: '.slider-fnt',
+      options: {
+        type: 'loop',
+        autoWidth: true,
+        gap: '1rem',
+        drag: 'free',
+        focus: 'left',
+        arrows: false,
+        pagination: false,
+        keyboard: false,
+        autoScroll: {
+          autoStart: true,
+          speed: 0.75,
+          pauseOnHover: false,
+        },
+      },
+      useAutoScroll: true,
+    },
+    {
       selector: '.product-slider',
       options: {
         autoWidth: true,

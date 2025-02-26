@@ -1,1 +1,92 @@
-"use strict";(()=>{function d(o,e,r=!1){let s=document.querySelectorAll(o);s.length&&s.forEach((n,l)=>{let i=`${o.replace(".","")}-${l}`;n.setAttribute("id",i);let t=new Splide(n,{...e});t.on("mounted",()=>{t.Components.Elements.slides.forEach((a,u)=>{a.addEventListener("click",()=>{t.go(u)})})}),r&&window.splide?.Extensions?t.mount(window.splide.Extensions):t.mount()})}document.addEventListener("DOMContentLoaded",()=>{[{selector:".slider1",options:{type:"loop",autoWidth:!0,gap:"4rem",drag:"free",focus:"left",arrows:!1,pagination:!1,keyboard:!1,autoScroll:{autoStart:!0,speed:.5,pauseOnHover:!1}},useAutoScroll:!0},{selector:".product-slider",options:{autoWidth:!0,perMove:1,gap:"1rem",arrows:!0,pagination:!1,drag:!0,type:"slide",focus:"left",snap:!0},useAutoScroll:!1}].forEach(e=>{d(e.selector,e.options,e.useAutoScroll)})});})();
+"use strict";
+(() => {
+  // bin/live-reload.js
+  new EventSource(`${"http://localhost:3000"}/esbuild`).addEventListener("change", () => location.reload());
+
+  // src/index.ts
+  function initSplide(selector, options, useAutoScroll = false) {
+    const splideElements = document.querySelectorAll(selector);
+    if (!splideElements.length)
+      return;
+    splideElements.forEach((element, index) => {
+      const uniqueId = `${selector.replace(".", "")}-${index}`;
+      element.setAttribute("id", uniqueId);
+      const splide = new Splide(element, {
+        ...options
+      });
+      splide.on("mounted", () => {
+        splide.Components.Elements.slides.forEach((slide, slideIndex) => {
+          slide.addEventListener("click", () => {
+            splide.go(slideIndex);
+          });
+        });
+      });
+      if (useAutoScroll && window.splide?.Extensions) {
+        splide.mount(window.splide.Extensions);
+      } else {
+        splide.mount();
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    const splideConfigs = [
+      {
+        selector: ".slider1",
+        options: {
+          type: "loop",
+          autoWidth: true,
+          gap: "4rem",
+          drag: "free",
+          focus: "left",
+          arrows: false,
+          pagination: false,
+          keyboard: false,
+          autoScroll: {
+            autoStart: true,
+            speed: 0.5,
+            pauseOnHover: false
+          }
+        },
+        useAutoScroll: true
+      },
+      {
+        selector: ".slider-fnt",
+        options: {
+          type: "loop",
+          autoWidth: true,
+          gap: "1rem",
+          drag: "free",
+          focus: "left",
+          arrows: false,
+          pagination: false,
+          keyboard: false,
+          autoScroll: {
+            autoStart: true,
+            speed: 0.75,
+            pauseOnHover: false
+          }
+        },
+        useAutoScroll: true
+      },
+      {
+        selector: ".product-slider",
+        options: {
+          autoWidth: true,
+          perMove: 1,
+          gap: "1rem",
+          arrows: true,
+          pagination: false,
+          drag: true,
+          type: "slide",
+          focus: "left",
+          snap: true
+        },
+        useAutoScroll: false
+      }
+    ];
+    splideConfigs.forEach((config) => {
+      initSplide(config.selector, config.options, config.useAutoScroll);
+    });
+  });
+})();
+//# sourceMappingURL=index.js.map
