@@ -1,4 +1,4 @@
-import { PromoModal } from './components/promoModal';
+import { PromoModal, type GsapLike } from './components/promoModal';
 
 declare const Splide: any;
 
@@ -7,6 +7,7 @@ declare global {
     splide?: {
       Extensions?: unknown;
     };
+    gsap?: GsapLike;
   }
 }
 
@@ -39,6 +40,28 @@ function initSplide(selector: string, options: any, useAutoScroll = false) {
     } else {
       splide.mount();
     }
+  });
+}
+
+function animateCardWrappers(): void {
+  const gsap = window.gsap;
+  if (!gsap) return;
+
+  const wrappers = document.querySelectorAll<HTMLElement>('.wrapper_cards');
+  if (!wrappers.length) return;
+
+  wrappers.forEach((wrapper, index) => {
+    if (wrapper.dataset.gsapAnimated === 'true') return;
+    wrapper.dataset.gsapAnimated = 'true';
+
+    gsap.set(wrapper, { autoAlpha: 0, y: 24 });
+    gsap.to(wrapper, {
+      autoAlpha: 1,
+      y: 0,
+      duration: 0.6,
+      ease: 'power3.out',
+      delay: 0.1 * index,
+    });
   });
 }
 
@@ -114,4 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
   splideConfigs.forEach((config) => {
     initSplide(config.selector, config.options, config.useAutoScroll);
   });
+
+  animateCardWrappers();
 });

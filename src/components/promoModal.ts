@@ -1,12 +1,13 @@
 type TriggerMode = 'time' | 'exit' | 'both' | 'off';
 
-type GsapTimelineLike = {
+export type GsapTimelineLike = {
   to: (target: unknown, vars: Record<string, unknown>, position?: string | number) => GsapTimelineLike;
   kill: () => void;
 };
 
-type GsapLike = {
+export type GsapLike = {
   set: (target: unknown, vars: Record<string, unknown>) => void;
+  to: (target: unknown, vars: Record<string, unknown>) => void;
   timeline: (options?: Record<string, unknown>) => GsapTimelineLike;
 };
 
