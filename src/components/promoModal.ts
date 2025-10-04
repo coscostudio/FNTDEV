@@ -1,14 +1,14 @@
-const FOCUSABLE_SELECTORS = [
-  'a[href]',
-  'button:not([disabled])',
-  'textarea:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-  '[contenteditable="true"]',
-].join(',');
-
 type TriggerMode = 'time' | 'exit' | 'both' | 'off';
+
+type GsapTimelineLike = {
+  to: (target: unknown, vars: Record<string, unknown>, position?: string | number) => GsapTimelineLike;
+  kill: () => void;
+};
+
+type GsapLike = {
+  set: (target: unknown, vars: Record<string, unknown>) => void;
+  timeline: (options?: Record<string, unknown>) => GsapTimelineLike;
+};
 
 export interface PromoModalOptions {
   triggerMode: TriggerMode;
@@ -26,6 +26,12 @@ const DEFAULT_OPTIONS: PromoModalOptions = {
 
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
+declare global {
+  interface Window {
+    gsap?: GsapLike;
+  }
+}
+
 export class PromoModal {
   private options: PromoModalOptions;
   private modalRoot: HTMLElement | null;
@@ -37,7 +43,9 @@ export class PromoModal {
   private exitIntentActive = false;
   private closeControlsBound = false;
   private previousFocus: HTMLElement | null = null;
-  private addedTemporaryTabIndex = false;
+  private gsap: GsapLike | null = null;
+  private openTimeline: GsapTimelineLike | null = null;
+  private closeTimeline: GsapTimelineLike | null = null;
 
   private readonly handleCloseControl = (event: Event) => {
     event.preventDefault();
@@ -59,35 +67,6 @@ export class PromoModal {
     if (event.key === 'Escape') {
       event.preventDefault();
       this.close();
-      return;
-    }
-
-    if (event.key !== 'Tab') return;
-
-    const focusable = this.getFocusableElements();
-    if (!focusable.length) {
-      if (this.modalRoot && document.activeElement !== this.modalRoot) {
-        event.preventDefault();
-        this.safeFocus(this.modalRoot);
-      }
-      return;
-    }
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement as HTMLElement | null;
-
-    if (event.shiftKey) {
-      if (!active || active === first) {
-        event.preventDefault();
-        this.safeFocus(last);
-      }
-      return;
-    }
-
-    if (!active || active === last) {
-      event.preventDefault();
-      this.safeFocus(first);
     }
   };
 
@@ -115,6 +94,8 @@ export class PromoModal {
       ? Array.from(this.modalRoot.querySelectorAll<HTMLElement>('[data-action="modal-close"]'))
       : [];
 
+    this.gsap = window.gsap ?? null;
+
     if (this.modalRoot && !this.modalRoot.hasAttribute('aria-hidden')) {
       this.modalRoot.setAttribute('aria-hidden', 'true');
     }
@@ -141,17 +122,21 @@ export class PromoModal {
     this.enableLiveListeners();
     this.trapFocus();
     this.setSessionFlag();
+    this.animateOpen();
   }
 
   close(): void {
     if (!this.modalRoot || !this.isOpen) return;
 
-    this.isOpen = false;
-    this.modalRoot.classList.remove('is-open');
-    this.modalRoot.setAttribute('aria-hidden', 'true');
-    this.toggleScrollLock(false);
     this.disableLiveListeners();
-    this.releaseFocus();
+    this.isOpen = false;
+
+    if (this.gsap && (this.modalContent || this.modalRoot)) {
+      this.animateClose();
+      return;
+    }
+
+    this.finalizeClose();
   }
 
   private attachCloseControlListeners(): void {
@@ -204,42 +189,13 @@ export class PromoModal {
     if (!this.modalRoot) return;
 
     this.previousFocus = (document.activeElement as HTMLElement) ?? null;
-
-    const focusable = this.getFocusableElements();
-    if (focusable.length) {
-      this.safeFocus(focusable[0]);
-      return;
-    }
-
-    if (!this.modalRoot.hasAttribute('tabindex')) {
-      this.modalRoot.setAttribute('tabindex', '-1');
-      this.addedTemporaryTabIndex = true;
-    }
-    this.safeFocus(this.modalRoot);
   }
 
   private releaseFocus(): void {
-    if (this.addedTemporaryTabIndex && this.modalRoot) {
-      this.modalRoot.removeAttribute('tabindex');
-      this.addedTemporaryTabIndex = false;
-    }
-
     if (this.previousFocus) {
       this.safeFocus(this.previousFocus);
     }
     this.previousFocus = null;
-  }
-
-  private getFocusableElements(): HTMLElement[] {
-    if (!this.modalRoot) return [];
-    const elements = Array.from(this.modalRoot.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
-    return elements.filter(
-      (element) => !element.hasAttribute('disabled') && this.isVisible(element)
-    );
-  }
-
-  private isVisible(element: HTMLElement): boolean {
-    return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
   }
 
   private safeFocus(element: HTMLElement): void {
@@ -263,6 +219,14 @@ export class PromoModal {
       root.classList.remove('modal-open');
       body.classList.remove('modal-open');
     }
+  }
+
+  private finalizeClose(): void {
+    if (!this.modalRoot) return;
+    this.modalRoot.classList.remove('is-open');
+    this.modalRoot.setAttribute('aria-hidden', 'true');
+    this.toggleScrollLock(false);
+    this.releaseFocus();
   }
 
   private clearAutoTriggers(): void {
@@ -323,5 +287,85 @@ export class PromoModal {
       'ontouchstart' in window ||
       (nav && typeof nav.maxTouchPoints === 'number' && nav.maxTouchPoints > 0)
     );
+  }
+
+  private animateOpen(): void {
+    if (!this.gsap || !this.modalRoot) return;
+
+    this.closeTimeline?.kill();
+    this.closeTimeline = null;
+
+    this.gsap.set(this.modalRoot, { autoAlpha: 0 });
+    if (this.modalContent) {
+      this.gsap.set(this.modalContent, { autoAlpha: 0, y: 32, scale: 0.95 });
+    }
+
+    this.openTimeline?.kill();
+    const timeline = this.gsap.timeline({
+      defaults: { ease: 'power2.out' },
+      onComplete: () => {
+        this.openTimeline = null;
+        this.gsap?.set(this.modalRoot, { clearProps: 'opacity,visibility' });
+        if (this.modalContent) {
+          this.gsap?.set(this.modalContent, { clearProps: 'transform,opacity' });
+        }
+      },
+    });
+
+    timeline.to(this.modalRoot, { autoAlpha: 1, duration: 0.25, ease: 'power1.out' });
+
+    if (this.modalContent) {
+      timeline.to(
+        this.modalContent,
+        { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' },
+        '-=0.1'
+      );
+    }
+
+    this.openTimeline = timeline;
+  }
+
+  private animateClose(): void {
+    if (!this.gsap || !this.modalRoot) {
+      this.finalizeClose();
+      return;
+    }
+
+    this.openTimeline?.kill();
+    this.openTimeline = null;
+
+    this.closeTimeline?.kill();
+
+    const contentTarget = this.modalContent ?? this.modalRoot;
+
+    const timeline = this.gsap.timeline({
+      defaults: { ease: 'power2.in' },
+      onComplete: () => {
+        this.closeTimeline = null;
+        this.gsap?.set(this.modalRoot!, { clearProps: 'opacity,visibility' });
+        if (this.modalContent) {
+          this.gsap?.set(this.modalContent, { clearProps: 'transform,opacity' });
+        }
+        this.finalizeClose();
+      },
+    });
+
+    if (this.modalContent) {
+      timeline.to(contentTarget, {
+        autoAlpha: 0,
+        y: 24,
+        scale: 0.95,
+        duration: 0.3,
+      });
+      timeline.to(
+        this.modalRoot,
+        { autoAlpha: 0, duration: 0.25, ease: 'power1.in' },
+        '-=0.15'
+      );
+    } else {
+      timeline.to(this.modalRoot, { autoAlpha: 0, duration: 0.25 });
+    }
+
+    this.closeTimeline = timeline;
   }
 }

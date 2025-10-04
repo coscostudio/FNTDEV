@@ -1,3 +1,15 @@
+import { PromoModal } from './components/promoModal';
+
+declare const Splide: any;
+
+declare global {
+  interface Window {
+    splide?: {
+      Extensions?: unknown;
+    };
+  }
+}
+
 function initSplide(selector: string, options: any, useAutoScroll = false) {
   // Query all matching elements instead of just one
   const splideElements = document.querySelectorAll(selector);
@@ -32,6 +44,17 @@ function initSplide(selector: string, options: any, useAutoScroll = false) {
 
 // Sliders Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  const modal = new PromoModal({
+    triggerMode: 'both',
+    timeDelayMs: 3000,
+    sessionKey: 'fntPromoModalShown',
+    respectExistingSession: true,
+  });
+
+  modal.init();
+
+  (window as typeof window & { fntPromo?: PromoModal }).fntPromo = modal;
+
   const splideConfigs = [
     {
       selector: '.slider1',
@@ -76,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         autoWidth: true,
         perMove: 1,
-        gap: '1rem',
+        gap: '0rem',
         arrows: true,
         pagination: false,
         drag: true,
